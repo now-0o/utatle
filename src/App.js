@@ -236,7 +236,7 @@ export default function App() {
                 </button>
                 <div className="flex items-center gap-2">
                   <input
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="flex-1 bg-black border border-gray-300 rounded-lg px-3 py-2 text-white placeholder-gray-400"
                     placeholder="매칭코드 입력"
                     value={codeInput}
                     onChange={(e) => setCodeInput(e.target.value)}
