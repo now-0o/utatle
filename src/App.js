@@ -1,25 +1,24 @@
 import { useMemo, useState } from 'react'
 import './index.css'
 
-// src/App.jsx (또는 사용 중인 파일 최상단)
+// 기존 import.meta 쓰던 줄을 아래로 교체
 const API_BASE = (() => {
-  const env = import.meta?.env?.VITE_API_BASE?.trim()
+  const env = (process.env.REACT_APP_API_BASE || '').trim()
   if (env) return env
   if (typeof window !== 'undefined') {
     const h = window.location.hostname
     if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:4000'
   }
-  // Netlify 배포 환경: 프록시 상대경로 사용
+  // Netlify 배포: Netlify 프록시(/api) 사용
   return '/api'
 })()
-
 
 function normalize(s = '') {
   return s
     .toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/[\[\]{}()'".,!?·:;/_-]/g, '')
-    .replace(/feat\.?|ft\.?|remix|inst(\.|)version?/gi, '')
+    .replace(/\s+/g, '')                       // 공백 제거
+    .replace(/[^\p{L}\p{N}]/gu, '')            // 문자/숫자 이외 전부 제거 (유니코드 안전)
+    .replace(/feat\.?|ft\.?|remix|inst(?:\.|)version?/gi, '') // 꼬리표 제거
 }
 
 function levenshtein(a, b) {
