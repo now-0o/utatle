@@ -74,8 +74,8 @@ async function apiByCode(code) {
 
 export default function App() {
   const [useGlobalRandom, setUseGlobalRandom] = useState(true)
-  const [year, setYear] = useState(2017)
-  const [month, setMonth] = useState(2)
+  const [year, setYear] = useState(2023)
+  const [month, setMonth] = useState()
 
   const [cur, setCur] = useState(null)
   const [state, setState] = useState('idle')
