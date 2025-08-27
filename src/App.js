@@ -28,37 +28,42 @@ function levenshtein(a, b) {
   return dp[m][n]
 }
 
-async function fetchQuizRandom() {
-  const r = await fetch(`${API_BASE}/api/quiz/random`, { headers: { 'Accept': 'application/json' } })
-  if (!r.ok) throw new Error(`HTTP ${r.status}`)
-  const j = await r.json()
-  return adaptQuizPayload(j)
-}
-
-async function fetchQuizByMonth(year, month) {
-  const qs = new URLSearchParams({ year: String(year), month: String(month).padStart(2, '0') })
-  const r = await fetch(`${API_BASE}/api/quiz/by-month?${qs}`, { headers: { 'Accept': 'application/json' } })
-  if (!r.ok) throw new Error(`HTTP ${r.status}`)
-  const j = await r.json()
-  return adaptQuizPayload(j)
-}
-
 function adaptQuizPayload(j) {
-  const year = Number(j.year ?? j.y)
-  const month = Number(j.month ?? j.m)
-  const rank = Number(j.rank ?? j.chartRank ?? j.no ?? 0)
-  const title = String(j.title ?? j.song_name ?? j.name ?? '')
-  const artist = String(j.artist ?? j.singer ?? '')
-  const ja = String(j.lyricsJa ?? j.ja ?? j.textJa ?? j.lyrics_ja ?? '')
-  const fullKo =
-    typeof j.lyricsKo === 'string'
-      ? j.lyricsKo
-      : Array.isArray(j.linesKo)
-      ? j.linesKo.join('\n')
-      : typeof j.ko === 'string'
-      ? j.ko
-      : ''
-  return { year, month, rank, title, artist, ja, fullKo }
+  return {
+    year: Number(j.year),
+    month: Number(j.month),
+    rank: Number(j.rank),
+    title: String(j.title || ''),
+    artist: String(j.artist || ''),
+    genre: String(j.genre || ''),
+    code: String(j.code || ''),
+    ko: Array.isArray(j.lyricsKoLines) ? j.lyricsKoLines : [],
+    ja: Array.isArray(j.lyricsJaLines) ? j.lyricsJaLines : [],
+    jaRuby: Array.isArray(j.lyricsJaRubyLines) ? j.lyricsJaRubyLines : []
+  }
+}
+
+async function fetchJson(url) {
+  const r = await fetch(url, { headers: { Accept: 'application/json' } })
+  if (!r.ok) throw new Error(`HTTP ${r.status}`)
+  return r.json()
+}
+
+async function apiRandom() {
+  const j = await fetchJson(`${API_BASE}/api/quiz/random`)
+  return adaptQuizPayload(j)
+}
+
+async function apiByMonth(year, month) {
+  const qs = new URLSearchParams({ year: String(year), month: String(month).padStart(2, '0') })
+  const j = await fetchJson(`${API_BASE}/api/quiz/by-month?${qs}`)
+  return adaptQuizPayload(j)
+}
+
+async function apiByCode(code) {
+  const qs = new URLSearchParams({ code: String(code).trim() })
+  const j = await fetchJson(`${API_BASE}/api/quiz/by-code?${qs}`)
+  return adaptQuizPayload(j)
 }
 
 export default function App() {
@@ -67,21 +72,27 @@ export default function App() {
   const [month, setMonth] = useState(2)
 
   const [cur, setCur] = useState(null)
-  const [guess, setGuess] = useState('')
   const [state, setState] = useState('idle')
   const [error, setError] = useState('')
+  const [guess, setGuess] = useState('')
+
+  const [showRuby, setShowRuby] = useState(false)
+  const [showHints, setShowHints] = useState(false)
+  const [openIdx, setOpenIdx] = useState(null)
+
+  const [codeInput, setCodeInput] = useState('')
+
+  const [wrongMsg, setWrongMsg] = useState('');
 
   async function startOrNext() {
     setState('loading')
     setError('')
     setCur(null)
     setGuess('')
-
+    setOpenIdx(null)
+    setShowHints(false)
     try {
-      const data = useGlobalRandom
-        ? await fetchQuizRandom()
-        : await fetchQuizByMonth(year, month)
-
+      const data = useGlobalRandom ? await apiRandom() : await apiByMonth(year, month)
       setCur(data)
       setState('playing')
     } catch (e) {
@@ -90,25 +101,53 @@ export default function App() {
     }
   }
 
-  function check() {
-    if (!cur) return
-    const a = normalize(guess)
-    const b = normalize(cur.title)
-    const dist = levenshtein(a, b)
-    const ok = a === b || dist <= Math.max(1, Math.floor(b.length * 0.15))
-    setState(ok ? 'correct' : 'playing')
+  async function loadByCode() {
+    if (!codeInput.trim()) return
+    setState('loading')
+    setError('')
+    setCur(null)
+    setGuess('')
+    setOpenIdx(null)
+    setShowHints(false)
+    try {
+      const data = await apiByCode(codeInput.trim())
+      setCur(data)
+      setState('playing')
+    } catch (e) {
+      setError(e?.message || '코드 로드 실패')
+      setState('idle')
+    }
   }
+
+  function check() {
+    if (!cur) return;
+    const a = normalize(guess);
+    const b = normalize(cur.title);
+    const dist = levenshtein(a, b);
+    const ok = a === b || dist <= Math.max(1, Math.floor(b.length * 0.15));
+  
+    if (ok) {
+      setState('correct');
+      setWrongMsg('');
+    } else {
+      setState('playing');      // ← 게임 유지
+      setWrongMsg('오답입니다. 다시 시도해보세요.');
+    }
+  }  
 
   const monthOptions = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), [])
 
+  const lines = cur ? (showRuby ? cur.jaRuby : cur.ja) : []
+  const koLines = cur ? cur.ko : []
+
   return (
     <div className="min-h-screen grid place-items-center p-4 sm:p-6 bg-gray-100 text-gray-900">
-      <div className="w-full max-w-[680px] sm:max-w-2xl md:max-w-3xl bg-white border border-gray-300 rounded-2xl p-4 sm:p-6 shadow-lg">
+      <div className="w-full max-w-[720px] sm:max-w-2xl md:max-w-3xl bg-white border border-gray-300 rounded-2xl p-4 sm:p-6 shadow-lg">
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <h1 className="text-lg sm:text-xl font-semibold">
             우타틀 <span className="text-indigo-600">Utatle</span>
           </h1>
-          <nav className="text-xs sm:text-sm text-gray-500">K-lyrics Quiz · 월도 카테고리</nav>
+          <nav className="text-xs sm:text-sm text-gray-500">K-lyrics Quiz · 월도/코드/후리가나</nav>
         </header>
 
         <section className="mt-4 sm:mt-6 grid gap-4">
@@ -182,23 +221,95 @@ export default function App() {
             )}
 
             {useGlobalRandom && (
-              <div className="mt-2">
+              <div className="mt-2 flex gap-2">
                 <button
                   onClick={startOrNext}
-                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium shadow hover:bg-indigo-500 w-full sm:w-auto"
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium shadow hover:bg-indigo-500"
                 >
                   시작/다음
                 </button>
+                <div className="flex items-center gap-2">
+                  <input
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    placeholder="매칭코드 입력"
+                    value={codeInput}
+                    onChange={(e) => setCodeInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && loadByCode()}
+                  />
+                  <button
+                    onClick={loadByCode}
+                    className="px-3 py-2 rounded-lg border border-gray-300 text-sm"
+                  >
+                    코드로 불러오기
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={showRuby}
+                onChange={(e) => setShowRuby(e.target.checked)}
+              />
+              후리가나 표시
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowHints((v) => !v)}
+              disabled={!cur}
+              className="px-3 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
+            >
+              힌트 보기
+            </button>
+            {cur?.code && (
+              <div className="text-xs text-gray-500">
+                코드 <span className="font-mono px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200">{cur.code}</span>
+              </div>
+            )}
+          </div>
+
+          {showHints && cur && (
+            <div className="rounded-xl border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700">
+              <div>장르: <span className="font-medium">{cur.genre || '정보 없음'}</span></div>
+              <div>가수: <span className="font-medium">{cur.artist || '정보 없음'}</span></div>
+            </div>
+          )}
+
           <div className="grid gap-2">
-            <label className="text-sm text-gray-500">일본어 가사 (전체)</label>
-            <div className="min-h-[200px] max-h-[400px] overflow-y-auto whitespace-pre-wrap leading-7 p-4 border border-gray-300 rounded-xl bg-gray-50 text-[15px]">
+            <label className="text-sm text-gray-500">일본어 가사</label>
+            <div className="min-h-[220px] max-h-[420px] overflow-y-auto leading-7 p-4 border border-gray-300 rounded-xl bg-gray-50 text-[15px] space-y-2">
               {state === 'loading' && '문제 로드 중…'}
-              {state !== 'loading' && cur && (cur.ja || '가사를 불러올 수 없습니다.')}
               {state === 'idle' && !cur && '시작을 누르세요'}
+              {state !== 'loading' && cur && lines.length === 0 && '가사를 불러올 수 없습니다.'}
+              {state !== 'loading' && cur && lines.length > 0 && (
+                <ul className="space-y-1">
+                  {lines.map((ln, idx) => (
+                    <li key={idx} className="group">
+                      <button
+                        type="button"
+                        className="w-full text-left hover:bg-white rounded px-2 py-1 transition"
+                        onClick={() => setOpenIdx(openIdx === idx ? null : idx)}
+                      >
+                        {showRuby ? (
+                          <span
+                            dangerouslySetInnerHTML={{ __html: ln }}
+                          />
+                        ) : (
+                          <span>{ln}</span>
+                        )}
+                      </button>
+                      {openIdx === idx && koLines[idx] && (
+                        <div className="mt-1 ml-2 pl-2 border-l-2 border-indigo-200 text-sm text-gray-700">
+                          {koLines[idx]}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             {!!error && <div className="text-red-600 text-sm">{error}</div>}
           </div>
@@ -210,7 +321,7 @@ export default function App() {
                 className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2"
                 value={guess}
                 onChange={(e) => setGuess(e.target.value)}
-                placeholder="제목을 입력"
+                placeholder="제목을 입력(한글/영문 구분)"
                 onKeyDown={(e) => e.key === 'Enter' && check()}
                 disabled={state !== 'playing'}
               />
@@ -231,18 +342,20 @@ export default function App() {
                 </button>
               </div>
             </div>
-
             {state === 'correct' && cur && (
-              <div className="text-green-600 text-sm mt-2">
-                정답! {cur.title} — {cur.artist}
-              </div>
+            <div className="text-green-600 text-sm mt-2">
+              정답! {cur.title} — {cur.artist}
+            </div>
+            )}
+            {wrongMsg && state === 'playing' && (
+            <div className="text-red-600 text-sm mt-2">{wrongMsg}</div>
             )}
             {state === 'giveup' && cur && (
-              <div className="text-red-600 text-sm mt-2">
-                정답: {cur.title} — {cur.artist}
-              </div>
+            <div className="text-red-600 text-sm mt-2">
+              정답: {cur.title} — {cur.artist}
+            </div>
             )}
-          </div>
+            </div>
 
           {cur && (
             <div className="text-xs text-gray-500">
@@ -251,7 +364,7 @@ export default function App() {
           )}
 
           <footer className="pt-2 text-xs text-gray-400">
-            비공개 실험 용도 · 백엔드 번역/데이터 조회 · 전체 가사 표시
+            비공개 실험 용도 · 백엔드 번역/루비/코드 지원
           </footer>
         </section>
       </div>
