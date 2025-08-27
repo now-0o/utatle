@@ -1,11 +1,18 @@
 import { useMemo, useState } from 'react'
 import './index.css'
 
-const API_BASE =
-  import.meta?.env?.VITE_API_BASE ||
-  (typeof window !== 'undefined' && window.location.port === '3000'
-    ? 'http://localhost:4000'
-    : '');
+// src/App.jsx (또는 사용 중인 파일 최상단)
+const API_BASE = (() => {
+  const env = import.meta?.env?.VITE_API_BASE?.trim()
+  if (env) return env
+  if (typeof window !== 'undefined') {
+    const h = window.location.hostname
+    if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:4000'
+  }
+  // Netlify 배포 환경: 프록시 상대경로 사용
+  return '/api'
+})()
+
 
 function normalize(s = '') {
   return s
