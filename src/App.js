@@ -82,10 +82,6 @@ export default function App() {
 
   const [code, setCode] = useState("");
 
-  const yearOptions = useMemo(
-    () => Array.from({ length: 2023 - 2000 + 1 }, (_, i) => 2000 + i),
-    []
-  );
   const monthOptions = useMemo(
     () => Array.from({ length: 12 }, (_, i) => i + 1),
     []
