@@ -81,6 +81,15 @@ export default function App() {
   const [hintArtistShown, setHintArtistShown] = useState(false);
 
   const [code, setCode] = useState("");
+  const [revealed, setRevealed] = useState(new Set());
+
+  function toggleReveal(i) {
+    setRevealed((prev) => {
+      const s = new Set(prev);
+      s.has(i) ? s.delete(i) : s.add(i);
+      return s;
+    });
+  }
 
   const monthOptions = useMemo(
     () => Array.from({ length: 12 }, (_, i) => i + 1),
@@ -93,6 +102,7 @@ export default function App() {
     setError("");
     setCur(null);
     setFeedback("");
+    setRevealed(new Set());
     setHintGenreShown(false);
     setHintArtistShown(false);
 
@@ -114,6 +124,7 @@ export default function App() {
     setError("");
     setCur(null);
     setFeedback("");
+    setRevealed(new Set());
     setHintGenreShown(false);
     setHintArtistShown(false);
 
@@ -296,32 +307,38 @@ export default function App() {
           {/* 문제 영역 */}
           <div className="grid gap-2">
             <label className="text-sm text-gray-500">일본어 가사 (전체)</label>
-
-            <div className="min-h-[200px] max-h-[420px] overflow-y-auto whitespace-pre-wrap leading-7 p-4 border border-gray-300 rounded-xl bg-gray-50 text-[15px]">
+            <div className="min-h-[200px] max-h-[420px] overflow-y-auto leading-7 p-4 border border-gray-300 rounded-xl bg-gray-50 text-[15px]">
               {state === "loading" && "불러오는 중…"}
 
-              {state !== "loading" && cur && (
-                <>
-                  {furiganaOn ? (
-                    // ⬇️ ruby HTML을 그대로 렌더
-                    <div
-                      className="ruby-area"
-                      dangerouslySetInnerHTML={{
-                        __html: (
-                          cur.lyricsJaRubyLines ||
-                          cur.lyricsJaLines ||
-                          []
-                        )
-                          .map((line) => line || "")
-                          .join("<br/>"),
-                      }}
-                    />
-                  ) : (
-                    // 일반 텍스트
-                    (cur.lyricsJaLines || []).join("\n")
-                  )}
-                </>
-              )}
+              {state !== "loading" &&
+                cur &&
+                (() => {
+                  const ja = furiganaOn
+                    ? cur.lyricsJaRubyLines || cur.lyricsJaLines || []
+                    : cur.lyricsJaLines || [];
+
+                  return ja.map((line, idx) => (
+                    <div key={idx} className="py-1">
+                      <button
+                        type="button"
+                        onClick={() => toggleReveal(idx)}
+                        className="w-full text-left rounded px-2 -mx-2 hover:bg-indigo-50"
+                      >
+                        {line?.length ? (
+                          line
+                        ) : (
+                          <span className="text-gray-400">（空行）</span>
+                        )}
+                      </button>
+
+                      {revealed.has(idx) && (
+                        <div className="mt-1 pl-2 border-l-2 border-indigo-200 text-sm text-gray-700 whitespace-pre-wrap">
+                          {cur.lyricsKoLines?.[idx] || ""}
+                        </div>
+                      )}
+                    </div>
+                  ));
+                })()}
 
               {state === "idle" && !cur && "시작을 누르세요"}
             </div>
