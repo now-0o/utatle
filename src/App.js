@@ -296,43 +296,38 @@ export default function App() {
           {/* 문제 영역 */}
           <div className="grid gap-2">
             <label className="text-sm text-gray-500">일본어 가사 (전체)</label>
+
             <div className="min-h-[200px] max-h-[420px] overflow-y-auto whitespace-pre-wrap leading-7 p-4 border border-gray-300 rounded-xl bg-gray-50 text-[15px]">
               {state === "loading" && "불러오는 중…"}
+
               {state !== "loading" && cur && (
                 <>
-                  {furiganaOn
-                    ? (cur.lyricsJaRubyLines || cur.lyricsJaLines || []).join(
-                        "\n"
-                      )
-                    : (cur.lyricsJaLines || []).join("\n")}
+                  {furiganaOn ? (
+                    // ⬇️ ruby HTML을 그대로 렌더
+                    <div
+                      className="ruby-area"
+                      dangerouslySetInnerHTML={{
+                        __html: (
+                          cur.lyricsJaRubyLines ||
+                          cur.lyricsJaLines ||
+                          []
+                        )
+                          .map((line) => line || "")
+                          .join("<br/>"),
+                      }}
+                    />
+                  ) : (
+                    // 일반 텍스트
+                    (cur.lyricsJaLines || []).join("\n")
+                  )}
                 </>
               )}
+
               {state === "idle" && !cur && "시작을 누르세요"}
             </div>
+
             {!!error && <div className="text-red-600 text-sm">{error}</div>}
           </div>
-
-          {/* 힌트(분리) */}
-          {(hintGenreShown || hintArtistShown) && cur && (
-            <div className="rounded-lg border border-dashed border-gray-300 p-3 text-sm text-gray-700 bg-gray-50">
-              {hintGenreShown && (
-                <div>
-                  장르:{" "}
-                  <span className="font-medium">
-                    {cur.genre || "정보 없음"}
-                  </span>
-                </div>
-              )}
-              {hintArtistShown && (
-                <div>
-                  가수:{" "}
-                  <span className="font-medium">
-                    {cur.artist || "정보 없음"}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* 정답 입력 */}
           <div className="grid gap-2">

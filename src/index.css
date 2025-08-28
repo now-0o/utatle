@@ -4,5 +4,29 @@
 @tailwind utilities;
 
 /* 선택: 살짝 보기 좋은 기본 스타일 */
-:root { color-scheme: dark; }
-html, body, #root { height: 100%; }
+:root {
+  color-scheme: dark;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* ruby 표시 최적화 */
+.ruby-area ruby {
+  ruby-position: over; /* 기본: 위쪽 표기 */
+}
+.ruby-area rt {
+  font-size: 0.65em; /* 작은 후리가나 */
+  line-height: 1;
+  color: #6b7280; /* gray-500 톤 */
+}
+.ruby-area rp {
+  display: none; /* ( ) 숨김 */
+}
+
+/* 줄바꿈 유지 */
+.ruby-area {
+  white-space: normal;
+}
