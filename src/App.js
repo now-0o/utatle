@@ -324,10 +324,18 @@ export default function App() {
                         onClick={() => toggleReveal(idx)}
                         className="w-full text-left rounded px-2 -mx-2 hover:bg-indigo-50"
                       >
-                        {line?.length ? (
-                          line
+                        {furiganaOn ? (
+                          // ⬇⬇ 후리가나 HTML 삽입 포인트
+                          <div
+                            className="whitespace-pre-wrap"
+                            dangerouslySetInnerHTML={{
+                              __html: line && line.length ? line : " ",
+                            }}
+                          />
                         ) : (
-                          <span className="text-gray-400">（空行）</span>
+                          <span className="whitespace-pre-wrap">
+                            {line && line.length ? line : " "}
+                          </span>
                         )}
                       </button>
 
