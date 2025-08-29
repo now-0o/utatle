@@ -67,8 +67,8 @@ export default function App() {
   const [category, setCategory] = useState("global");
   const [selectedGenre, setSelectedGenre] = useState("");
 
-  const [year, setYear] = useState(2017);
-  const [month, setMonth] = useState(2);
+  const [year, setYear] = useState(2023);
+  const [month, setMonth] = useState();
 
   const [cur, setCur] = useState(null);
   const [furiganaOn, setFuriganaOn] = useState(true);
@@ -298,23 +298,6 @@ export default function App() {
 
             <div className="h-px w-full bg-gray-200 my-3"></div>
 
-            {/* 2) 매칭코드 입력 + 불러오기 */}
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
-              <input
-                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="매칭코드 입력"
-              />
-              <button
-                onClick={loadByCode}
-                disabled={state === "loading"}
-                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-              >
-                코드 불러오기
-              </button>
-            </div>
-
             {/* 3) 힌트: 반반(버튼 텍스트로 표시) */}
             <div className="grid grid-cols-2 gap-2 mt-2">
               <button
@@ -424,6 +407,23 @@ export default function App() {
                 {feedback}
               </div>
             )}
+          </div>
+
+          {/* 2) 매칭코드 입력 + 불러오기 */}
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+            <input
+              className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="매칭코드 입력"
+            />
+            <button
+              onClick={loadByCode}
+              disabled={state === "loading"}
+              className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+            >
+              코드 불러오기
+            </button>
           </div>
 
           {/* 메타/매칭코드 */}
