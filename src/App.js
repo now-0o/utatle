@@ -23,21 +23,31 @@ function normalize(s = "") {
     .replace(/remix|inst(?:\.|)\s*version?/gi, "");
 }
 function levenshtein(a, b) {
-  const m = a.length, n = b.length;
+  const m = a.length,
+    n = b.length;
   const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
   for (let i = 0; i <= m; i++) dp[i][0] = i;
   for (let j = 0; j <= n; j++) dp[0][j] = j;
   for (let i = 1; i <= m; i++)
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
     }
   return dp[m][n];
 }
 
 /** ── API ── */
 async function getByMonth(year, month) {
-  const r = await fetch(`${API_BASE}/quiz/by-month?year=${year}&month=${String(month).padStart(2, "0")}`);
+  const r = await fetch(
+    `${API_BASE}/quiz/by-month?year=${year}&month=${String(month).padStart(
+      2,
+      "0"
+    )}`
+  );
   if (!r.ok) throw new Error("API error");
   return r.json();
 }
@@ -47,19 +57,29 @@ async function getRandom() {
   return r.json();
 }
 async function getByCode(code) {
-  const r = await fetch(`${API_BASE}/quiz/by-code?code=${encodeURIComponent(code)}`);
+  const r = await fetch(
+    `${API_BASE}/quiz/by-code?code=${encodeURIComponent(code)}`
+  );
   if (!r.ok) throw new Error("API error");
   return r.json();
 }
 async function getByGenre(genre) {
-  const r = await fetch(`${API_BASE}/quiz/by-genre?genre=${encodeURIComponent(genre)}`);
+  const r = await fetch(
+    `${API_BASE}/quiz/by-genre?genre=${encodeURIComponent(genre)}`
+  );
   if (!r.ok) throw new Error("API error");
   return r.json();
 }
 
-/** 임시 장르 목록(백엔드에서 목록 내려주면 치환 가능) */
 const GENRES = [
-  "발라드", "댄스", "힙합", "R&B/Soul", "록", "인디", "트로트", "팝", "OST"
+  "발라드",
+  "댄스",
+  "랩/힙합",
+  "R&B/Soul",
+  "인디음악",
+  "록/메탈",
+  "트로트",
+  "포크/블루스",
 ];
 
 export default function App() {
@@ -88,14 +108,17 @@ export default function App() {
   /** 클릭한 줄의 원문(한글) 공개 인덱스 */
   const [revealed, setRevealed] = useState(new Set());
   function toggleReveal(i) {
-    setRevealed(prev => {
+    setRevealed((prev) => {
       const s = new Set(prev);
       s.has(i) ? s.delete(i) : s.add(i);
       return s;
     });
   }
 
-  const monthOptions = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
+  const monthOptions = useMemo(
+    () => Array.from({ length: 12 }, (_, i) => i + 1),
+    []
+  );
 
   async function startOrNext() {
     if (state === "loading") return;
@@ -179,11 +202,13 @@ export default function App() {
           {/* 헤더 우측: 후리가나 토글(컴팩트) */}
           <div>
             <button
-              onClick={() => setFuriganaOn(v => !v)}
+              onClick={() => setFuriganaOn((v) => !v)}
               className={`px-2 py-1 rounded-md text-xs font-medium transition
-                ${furiganaOn
-                  ? "bg-indigo-600 text-white hover:bg-indigo-500"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+                ${
+                  furiganaOn
+                    ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
             >
               {furiganaOn ? "후리가나 ON" : "후리가나 OFF"}
             </button>
@@ -201,7 +226,9 @@ export default function App() {
                 type="button"
                 onClick={() => setCategory("global")}
                 className={`flex-1 px-4 py-2 text-sm transition ${
-                  category === "global" ? "bg-indigo-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                  category === "global"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 전체 랜덤
@@ -210,7 +237,9 @@ export default function App() {
                 type="button"
                 onClick={() => setCategory("month")}
                 className={`flex-1 px-4 py-2 text-sm transition border-l border-gray-300 ${
-                  category === "month" ? "bg-indigo-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                  category === "month"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 월도 선택
@@ -219,7 +248,9 @@ export default function App() {
                 type="button"
                 onClick={() => setCategory("genre")}
                 className={`flex-1 px-4 py-2 text-sm transition border-l border-gray-300 ${
-                  category === "genre" ? "bg-indigo-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                  category === "genre"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 장르
@@ -232,7 +263,7 @@ export default function App() {
                 <div className="flex items-center rounded-lg border border-gray-300 bg-white w-full">
                   <button
                     type="button"
-                    onClick={() => setYear(y => Math.max(2000, y - 1))}
+                    onClick={() => setYear((y) => Math.max(2000, y - 1))}
                     className="px-3 py-2 text-gray-600 hover:bg-gray-50"
                   >
                     ‹
@@ -242,7 +273,7 @@ export default function App() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setYear(y => Math.min(2023, y + 1))}
+                    onClick={() => setYear((y) => Math.min(2023, y + 1))}
                     className="px-3 py-2 text-gray-600 hover:bg-gray-50"
                   >
                     ›
@@ -250,7 +281,7 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-6 sm:grid-cols-12 gap-1">
-                  {monthOptions.map(m => (
+                  {monthOptions.map((m) => (
                     <button
                       key={m}
                       type="button"
@@ -278,12 +309,13 @@ export default function App() {
                 >
                   <option value="">장르 선택</option>
                   {GENRES.map((g) => (
-                    <option key={g} value={g}>{g}</option>
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
                   ))}
                 </select>
               </div>
             )}
-
 
             {/* 1) 시작/다음: 풀폭 */}
             <div className="mt-2">
@@ -304,18 +336,30 @@ export default function App() {
                 onClick={() => setHintGenreShown(true)}
                 disabled={!cur}
                 className="w-full px-4 py-3 rounded-xl border border-gray-300 hover:bg-gray-50 disabled:opacity-50 truncate"
-                title={hintGenreShown && cur ? (cur.genre || "정보 없음") : "힌트(장르)"}
+                title={
+                  hintGenreShown && cur
+                    ? cur.genre || "정보 없음"
+                    : "힌트(장르)"
+                }
               >
-                {hintGenreShown && cur ? (cur.genre || "정보 없음") : "힌트(장르)"}
+                {hintGenreShown && cur
+                  ? cur.genre || "정보 없음"
+                  : "힌트(장르)"}
               </button>
 
               <button
                 onClick={() => setHintArtistShown(true)}
                 disabled={!cur}
                 className="w-full px-4 py-3 rounded-xl border border-gray-300 hover:bg-gray-50 disabled:opacity-50 truncate"
-                title={hintArtistShown && cur ? (cur.artist || "정보 없음") : "힌트(가수)"}
+                title={
+                  hintArtistShown && cur
+                    ? cur.artist || "정보 없음"
+                    : "힌트(가수)"
+                }
               >
-                {hintArtistShown && cur ? (cur.artist || "정보 없음") : "힌트(가수)"}
+                {hintArtistShown && cur
+                  ? cur.artist || "정보 없음"
+                  : "힌트(가수)"}
               </button>
             </div>
           </div>
@@ -326,37 +370,41 @@ export default function App() {
             <div className="min-h-[200px] max-h-[420px] overflow-y-auto leading-7 p-4 border border-gray-300 rounded-xl bg-gray-50 text-[15px]">
               {state === "loading" && "불러오는 중…"}
 
-              {state !== "loading" && cur && (() => {
-                const ja = furiganaOn
-                  ? (cur.lyricsJaRubyLines || cur.lyricsJaLines || [])
-                  : (cur.lyricsJaLines || []);
-                return ja.map((line, idx) => (
-                  <div key={idx} className="py-1">
-                    <button
-                      type="button"
-                      onClick={() => toggleReveal(idx)}
-                      className="w-full text-left rounded px-2 -mx-2 hover:bg-indigo-50"
-                    >
-                      {furiganaOn ? (
-                        <div
-                          className="whitespace-pre-wrap"
-                          dangerouslySetInnerHTML={{ __html: line && line.length ? line : " " }}
-                        />
-                      ) : (
-                        <span className="whitespace-pre-wrap">
-                          {line && line.length ? line : " "}
-                        </span>
-                      )}
-                    </button>
+              {state !== "loading" &&
+                cur &&
+                (() => {
+                  const ja = furiganaOn
+                    ? cur.lyricsJaRubyLines || cur.lyricsJaLines || []
+                    : cur.lyricsJaLines || [];
+                  return ja.map((line, idx) => (
+                    <div key={idx} className="py-1">
+                      <button
+                        type="button"
+                        onClick={() => toggleReveal(idx)}
+                        className="w-full text-left rounded px-2 -mx-2 hover:bg-indigo-50"
+                      >
+                        {furiganaOn ? (
+                          <div
+                            className="whitespace-pre-wrap"
+                            dangerouslySetInnerHTML={{
+                              __html: line && line.length ? line : " ",
+                            }}
+                          />
+                        ) : (
+                          <span className="whitespace-pre-wrap">
+                            {line && line.length ? line : " "}
+                          </span>
+                        )}
+                      </button>
 
-                    {revealed.has(idx) && (
-                      <div className="mt-1 pl-2 border-l-2 border-indigo-200 text-sm text-gray-700 whitespace-pre-wrap">
-                        {cur.lyricsKoLines?.[idx] || ""}
-                      </div>
-                    )}
-                  </div>
-                ));
-              })()}
+                      {revealed.has(idx) && (
+                        <div className="mt-1 pl-2 border-l-2 border-indigo-200 text-sm text-gray-700 whitespace-pre-wrap">
+                          {cur.lyricsKoLines?.[idx] || ""}
+                        </div>
+                      )}
+                    </div>
+                  ));
+                })()}
 
               {state === "idle" && !cur && "시작을 누르세요"}
             </div>
@@ -370,7 +418,10 @@ export default function App() {
               <input
                 className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2"
                 value={guess}
-                onChange={(e) => { setGuess(e.target.value); setFeedback(""); }}
+                onChange={(e) => {
+                  setGuess(e.target.value);
+                  setFeedback("");
+                }}
                 placeholder="제목을 입력"
                 onKeyDown={(e) => e.key === "Enter" && check()}
                 disabled={state === "loading" || !cur}
@@ -439,7 +490,8 @@ export default function App() {
           )}
 
           <footer className="pt-2 text-xs text-gray-400">
-            비공개 실험 용도 · DeepL API 번역 · 후리가나 {furiganaOn ? "ON" : "OFF"}
+            비공개 실험 용도 · DeepL API 번역 · 후리가나{" "}
+            {furiganaOn ? "ON" : "OFF"}
           </footer>
         </section>
       </div>
